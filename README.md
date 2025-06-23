@@ -277,7 +277,7 @@ Below is a comprehensive, updated guide to create a **purple teaming lab** on a 
    - Access: `http://localhost:9000` (`admin@thehive.local`/`secret`).
 
 5. **Cortex**:
-   - Access: `http://localhost:9001`.
+   - Access: `http://localhost:9002`.
    - Configure analyzers (e.g., VirusTotal).
 
 6. **n8n**:
@@ -372,7 +372,7 @@ Five exercises to exploit `vuln-os` from zero to root and plant backdoors.
     ```
 - **Response**:
   - TheHive case (`http://localhost:9000`).
-  - Cortex IOC enrichment (`http://localhost:9001`).
+  - Cortex IOC enrichment (`http://localhost:9002`).
   - n8n: Wazuh alert → block FTP.
 - **Collaboration**:
   - Red team shares backdoor steps.
