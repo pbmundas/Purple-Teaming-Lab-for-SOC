@@ -9,10 +9,9 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
-    echo "🔄 Installing docker-compose..."
-    sudo apt update
-    sudo apt install -y docker-compose
+if ! docker compose version &> /dev/null; then
+    echo "⛔ Docker Compose plugin not found. Ensure Docker Desktop is installed and updated."
+    exit 1
 fi
 
 echo "✅ Docker and Docker Compose found."
@@ -24,20 +23,19 @@ echo "📁 Creating lab directory: $INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# Use your actual lab GitHub repo if available
-echo "📦 Cloning lab..."
-if [ ! -d ".git" ]; then
-    git clone https://github.com/pbmundas/Purple-Teaming-Lab-for-SOC.git .
-else
+# Skip cloning if repo already exists
+if [ -d ".git" ]; then
     echo "📁 Git repo already exists. Skipping clone."
+else
+    echo "📦 Cloning lab..."
+    git clone https://github.com/pbmundas/Purple-Teaming-Lab-for-SOC.git .
 fi
 
-
 echo "📦 Pulling Docker images..."
-docker-compose pull
+docker compose pull
 
 echo "🚀 Starting lab environment..."
-docker-compose up -d
+docker compose up -d
 
 echo ""
 echo "✅ Lab is running!"
