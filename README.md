@@ -299,7 +299,7 @@ Below is a comprehensive, updated guide to create a **purple teaming lab** on a 
      ```powershell
      docker exec vuln-os netstat -tuln
      ```
-     Expect ports 22 (SSH), 21 (FTP), 80 (Apache), 445 (Samba).
+     Expect ports 22 (SSH), 21 (FTP), 80 (Apache), 4450 (Samba).
 
 9. **Security Onion (Optional)**:
    - Add to `docker-compose.yml`:
@@ -386,7 +386,7 @@ Five exercises to exploit `vuln-os` from zero to root and plant backdoors.
 **Red Team (Kali)**:
 1. **Recon**:
    ```bash
-   nmap -sV -p 445 --script smb-vuln* vuln-os
+   nmap -sV -p 4450 --script smb-vuln* vuln-os
    ```
 2. **Exploit**:
    ```bash
