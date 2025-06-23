@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   attacker:
     image: mitre/caldera:latest
@@ -27,15 +26,15 @@ services:
     volumes:
       - ./zeek/logs:/zeek/logs
   wazuh-manager:
-    image:uh/wazuh:4.7.2  # Updated image
+    image: wazuh/wazuh:4.7.2
     container_name: wazuh-manager
     environment:
       - WAZUH_AGENT_GROUP=default
     networks: [blueteam_lab]
     ports: ['1514:1514/udp','55000:55000']
     volumes:
-      - wazuh_data:/var/ossec/data  # Note: Path might be /ossec, verify below
- elasticsearch:
+      - wazuh_data:/var/ossec
+  elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
     container_name: elasticsearch
     environment:
@@ -50,14 +49,14 @@ services:
     ports: ['5601:5601']
     depends_on: [elasticsearch]
   wazuh-agent-target:
-    image: wazuh/wazuh-agent:4.7.2  # Updated image
+    image: wazuh/wazuh-agent:4.7.2
     container_name: wazuh-agent-target
     networks: [blueteam_lab]
     depends_on: [wazuh-manager]
     environment:
       - WAZUH_MANAGER_IP=wazuh-manager
   wazuh-agent-attacker:
-    image: wazuh/wazuh-agent:4.7.2  # Updated image
+    image: wazuh/wazuh-agent:4.7.2
     container_name: wazuh-agent-attacker
     networks: [blueteam_lab]
     depends_on: [wazuh-manager]
