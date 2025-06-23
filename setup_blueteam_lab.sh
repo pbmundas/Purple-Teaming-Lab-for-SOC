@@ -26,7 +26,12 @@ cd "$INSTALL_DIR"
 
 # Use your actual lab GitHub repo if available
 echo "📦 Cloning lab..."
-git clone https://github.com/pbmundas/Purple-Teaming-Lab-for-SOC.git .  # Replace with your repo if custom
+if [ ! -d ".git" ]; then
+    git clone https://github.com/pbmundas/Purple-Teaming-Lab-for-SOC.git .
+else
+    echo "📁 Git repo already exists. Skipping clone."
+fi
+
 
 echo "📦 Pulling Docker images..."
 docker-compose pull
