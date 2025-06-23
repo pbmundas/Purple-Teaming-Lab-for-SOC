@@ -1,0 +1,21 @@
+%YAML 1.1
+---
+vars:
+  address-groups:
+    HOME_NET: "[172.18.0.0/16]"
+    EXTERNAL_NET: "!$HOME_NET"
+  port-groups:
+    HTTP_PORTS: "80"
+    SSH_PORTS: "22"
+default-log-dir: /var/log/suricata/
+outputs:
+  - fast:
+      enabled: yes
+      filename: fast.log
+      append: yes
+af-packet:
+  - interface: eth0
+    threads: 1
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
