@@ -13,6 +13,7 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - N8N_ENCRYPTION_KEY=your_secure_key_here
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
     networks:
       - purple-net
   kali:
@@ -64,6 +65,8 @@ services:
     container_name: logstash
     volumes:
       - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./zeek_logs:/usr/local/zeek/logs:ro
+      - ./suricata_logs:/var/log/suricata:ro
     depends_on:
       - elasticsearch
     networks:
