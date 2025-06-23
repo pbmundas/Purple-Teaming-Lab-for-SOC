@@ -1,0 +1,86 @@
+version: '3.8'
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n/.n8n:/home/node/.n8n
+      - ./n8n/workflows:/home/node/workflows
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_ENCRYPTION_KEY=your_secure_key_here
+    networks:
+      - purple-net
+  kali:
+    image: kalilinux/kali-rolling:latest
+    container_name: kali
+    privileged: true
+    command: tail -f /dev/null
+    volumes:
+      - ./scripts:/scripts
+    networks:
+      - purple-net
+  metasploitable:
+    image: tleemcjr/metasploitable2:latest
+    container_name: metasploitable
+    command: /bin/bash -c "/etc/init.d/ssh start && tail -f /dev/null"
+    networks:
+      - purple-net
+  zeek:
+    image: zeek/zeek:latest
+    container_name: zeek
+    volumes:
+      - ./zeek_logs:/usr/local/zeek/logs
+    command: zeek -i eth0
+    networks:
+      - purple-net
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: suricata
+    volumes:
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml
+      - ./suricata_logs:/var/log/suricata
+    command: suricata -i eth0
+    networks:
+      - purple-net
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - purple-net
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.10.2
+    container_name: logstash
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    depends_on:
+      - elasticsearch
+    networks:
+      - purple-net
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.10.2
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - purple-net
+volumes:
+  es_data:
+networks:
+  purple-net:
+    driver: bridge
