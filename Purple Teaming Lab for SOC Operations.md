@@ -876,4 +876,4 @@ Below are five exercises to exploit DVWA and Metasploitable3 from zero to root a
 - Security Onion is optional due to resource demands.
 - Expand with custom Suricata/Wazuh rules or additional targets.
 
-This guide provides a fully functional purple teaming lab with detailed exercises for attack and defense practice. Let me know if you need more scenarios or tool-specific help!
+This guide provides a fully functional purple teaming lab with detailed exercises for attack and defense practice. 
