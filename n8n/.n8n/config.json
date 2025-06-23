@@ -1,6 +1,0 @@
-{
-  "database": {
-    "type": "sqlite"
-  },
-  "encryptionKey": "your_secure_key_here"
-}
