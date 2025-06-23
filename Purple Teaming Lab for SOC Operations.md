@@ -134,25 +134,29 @@ Below is a comprehensive, updated guide to create a **purple teaming lab** on a 
    - Open in editor (e.g., `notepad Dockerfile`) and add:
      ```dockerfile
      FROM ubuntu:18.04
-     RUN apt-get update && apt-get install -y \
-         apache2=2.4.29-1ubuntu4.14 \
-         vsftpd=3.0.3-9build1 \
-         samba=2:4.7.6+dfsg~ubuntu-0ubuntu2.23 \
-         openssh-server=1:7.6p1-4ubuntu0.3 \
-         net-tools \
-         curl \
-         cron \
-         && rm -rf /var/lib/apt/lists/*
-     RUN echo 'root:toor' | chpasswd
-     RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-     RUN mkdir /var/ftp && chown ftp:ftp /var/ftp
-     RUN echo 'anonymous_enable=YES' >> /etc/vsftpd.conf
-     RUN echo 'write_enable=YES' >> /etc/vsftpd.conf
-     RUN echo -e "[global]\nworkgroup = WORKGROUP\nserver string = Samba Server\nsecurity = user\nmap to guest = Bad User\n\n[public]\npath = /var/ftp\nwritable = yes\nguest ok = yes\n" > /etc/samba/smb.conf
-     RUN smbpasswd -a root && echo -e "toor\ntoor" | smbpasswd -s root
-     RUN mkdir -p /var/log/vuln-os
-     EXPOSE 22 21 80 445
-     CMD service apache2 start && service vsftpd start && service smbd start && service ssh start && service cron start && touch /var/log/vuln-os/dummy.log && tail -f /var/log/vuln-os/dummy.log
+RUN echo "deb http://us.archive.ubuntu.com/ubuntu/ bionic main restricted universe multiverse" > /etc/apt/sources.list && \
+    echo "deb http://us.archive.ubuntu.com/ubuntu/ bionic-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb http://us.archive.ubuntu.com/ubuntu/ bionic-security main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb http://us.archive.ubuntu.com/ubuntu/ bionic-backports main restricted universe multiverse" >> /etc/apt/sources.list
+RUN apt-get update && apt-get install -y \
+    apache2 \
+    vsftpd \
+    samba \
+    openssh-server \
+    net-tools \
+    curl \
+    cron \
+    && rm -rf /var/lib/apt/lists/*
+RUN echo 'root:toor' | chpasswd
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN mkdir /var/ftp && chown ftp:ftp /var/ftp
+RUN echo 'anonymous_enable=YES' >> /etc/vsftpd.conf
+RUN echo 'write_enable=YES' >> /etc/vsftpd.conf
+RUN echo -e "[global]\nworkgroup = WORKGROUP\nserver string = Samba Server\nsecurity = user\nmap to guest = Bad User\n\n[public]\npath = /var/ftp\nwritable = yes\nguest ok = yes\n" > /etc/samba/smb.conf
+RUN smbpasswd -a root && echo -e "toor\ntoor" | smbpasswd -s root
+RUN mkdir -p /var/log/vuln-os
+EXPOSE 22 21 80 445
+CMD service apache2 start && service vsftpd start && service smbd start && service ssh start && service cron start && touch /var/log/vuln-os/dummy.log && tail -f /var/log/vuln-os/dummy.log
      ```
 
 2. **Explanation**:
