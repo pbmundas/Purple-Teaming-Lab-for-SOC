@@ -1,0 +1,86 @@
+{
+  "name": "Network Scan with Zeek Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "cronExpression": "0 */5 * * * *"
+      },
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "command": "docker exec kali nmap -sS -p 22,80,445 metasploitable"
+      },
+      "name": "Execute Nmap Scan",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "command": "cat /usr/local/zeek/logs/current/conn.log | zeek-cut id.orig_h id.resp_h proto service"
+      },
+      "name": "Analyze Zeek Logs",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "http://elasticsearch:9200/zeek_logs/_doc",
+        "options": {},
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "log_data",
+              "value": "={{$node['Analyze Zeek Logs'].json.stdout}}"
+            }
+          ]
+        }
+      },
+      "name": "Log to Elasticsearch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute Nmap Scan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Nmap Scan": {
+      "main": [
+        [
+          {
+            "node": "Analyze Zeek Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Zeek Logs": {
+      "main": [
+        [
+          {
+            "node": "Log to Elasticsearch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
