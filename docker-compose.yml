@@ -1,0 +1,112 @@
+services:
+  securityonion:
+    image: securityonionsolutions/securityonion
+    container_name: securityonion
+    networks:
+      - purple-net
+    ports:
+      - "8000:8000"
+      - "514:514/udp"
+      - "1514:1514"
+    volumes:
+      - ./configs/securityonion/so-config.yml:/etc/securityonion/so-config.yml
+    environment:
+      - SO_FEATURES=full
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+    restart: unless-stopped
+
+  ossec:
+    image: atomicorp/ossec-docker
+    container_name: ossec
+    networks:
+      - purple-net
+    ports:
+      - "1515:1515"
+    volumes:
+      - ./configs/ossec/ossec.conf:/var/ossec/etc/ossec.conf
+    environment:
+      - OSSEC_SERVER=1
+    restart: unless-stopped
+
+  thehive:
+    image: thehiveproject/thehive
+    container_name: thehive
+    networks:
+      - purple-net
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./configs/thehive/application.conf:/etc/thehive/application.conf
+    depends_on:
+      - elasticsearch
+    environment:
+      - JAVA_OPTS=-Xms1g -Xmx1g
+    restart: unless-stopped
+
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    container_name: elasticsearch
+    networks:
+      - purple-net
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    restart: unless-stopped
+
+  misp:
+    image: coolacid/misp-docker
+    container_name: misp
+    networks:
+      - purple-net
+    ports:
+      - "8080:80"
+    volumes:
+      - ./configs/misp/config.php:/var/www/MISP/app/Config/config.php
+    environment:
+      - MYSQL_HOST=misp-mysql
+      - MYSQL_USER=misp
+      - MYSQL_PASSWORD=misp_password
+      - MYSQL_DATABASE=misp
+    depends_on:
+      - misp-mysql
+    restart: unless-stopped
+
+  misp-mysql:
+    image: mysql:8.0
+    container_name: misp-mysql
+    networks:
+      - purple-net
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_USER=misp
+      - MYSQL_PASSWORD=misp_password
+      - MYSQL_DATABASE=misp
+    restart: unless-stopped
+
+  kali:
+    image: kalilinux/kali-rolling
+    container_name: kali
+    networks:
+      - purple-net
+    ports:
+      - "3389:3389"
+    command: ["/bin/bash", "-c", "apt-get update && apt-get install -y metasploit-framework nmap xrdp && service xrdp start && /bin/bash"]
+    restart: unless-stopped
+
+  dvwa:
+    image: vulnerables/web-dvwa
+    container_name: dvwa
+    networks:
+      - purple-net
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+networks:
+  purple-net:
+    driver: bridge
