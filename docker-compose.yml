@@ -58,6 +58,24 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     restart: unless-stopped
 
+  misp:
+    image: misp/misp-docker:latest
+    container_name: misp
+    networks:
+      - purple-net
+    ports:
+      - "8080:80"
+    volumes:
+      - ./configs/misp/config.php:/var/www/MISP/app/Config/config.php
+    environment:
+      - MYSQL_HOST=misp-mysql
+      - MYSQL_USER=misp
+      - MYSQL_PASSWORD=misp_password
+      - MYSQL_DATABASE=misp
+    depends_on:
+      - misp-mysql
+    restart: unless-stopped
+
   misp-mysql:
     image: mysql:8.0
     container_name: misp-mysql
