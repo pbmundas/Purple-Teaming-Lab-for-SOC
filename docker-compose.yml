@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
 
   misp:
-    image: misp/misp-docker:latest
+    image: harvarditsecurity/misp
     container_name: misp
     networks:
       - purple-net
