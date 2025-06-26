@@ -1,5 +1,9 @@
 Here’s a Windows equivalent setup to your Ubuntu vulnerabilities.sh lab — a curated list of vulnerable Windows applications and corresponding Metasploit modules, intended for lab use only (e.g., in VirtualBox or Hyper-V).
 
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\setup-vuln-lab.ps1
+
+
 🧨 Intentionally Vulnerable Windows Applications for Metasploit Practice
 | Software                             | Vulnerability / Exploit | Metasploit Module                                   |
 | ------------------------------------ | ----------------------- | --------------------------------------------------- |
