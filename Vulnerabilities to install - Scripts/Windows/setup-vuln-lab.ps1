@@ -1,13 +1,14 @@
 # setup-vuln-lab.ps1
+# Vulnerable Windows application setup script for Metasploit labs (Run as Admin)
 
-Write-Host "[*] Creating Tools folder..." -ForegroundColor Cyan
+Write-Host "[*] Creating Tools folder..."
 New-Item -ItemType Directory -Path "C:\VulnLab" -Force | Out-Null
 Set-Location "C:\VulnLab"
 
 function Download-VulnApp($url, $filename) {
-    Write-Host "[*] Downloading $filename..." -ForegroundColor Yellow
+    Write-Host "[*] Downloading $filename..."
     Invoke-WebRequest -Uri $url -OutFile $filename
-    Write-Host "    -> Saved as $filename" -ForegroundColor Green
+    Write-Host "    -> Saved as $filename"
 }
 
 # 1. FreeFloat FTP Server 1.0 (USER buffer overflow)
@@ -30,10 +31,14 @@ Start-Process "EasyRMtoMP3Converter.exe"
 Download-VulnApp "https://github.com/stephenbradshaw/vulnserver/raw/master/vulnserver.exe" "vulnserver.exe"
 Start-Process "vulnserver.exe"
 
-Write-Host "`n[✔] Vulnerable applications installed and running." -ForegroundColor Green
-Write-Host "💡 You can now use Metasploit on Kali to exploit these services." -ForegroundColor Yellow
-Write-Host "   - FreeFloat FTP: port 21"
-Write-Host "   - SLMail: port 110 (POP3)"
-Write-Host "   - WarFTP: port 21"
-Write-Host "   - Vulnserver: port 9999"
-Write-Host "`n🔒 Make sure to run this inside an isolated VM only!" -ForegroundColor Red
+Write-Host ""
+Write-Host " Vulnerable applications have been downloaded and launched."
+Write-Host "You can now test exploitation using Metasploit from your Kali Linux box."
+Write-Host ""
+Write-Host "Services available:"
+Write-Host "  - FreeFloat FTP: port 21"
+Write-Host "  - SLMail: port 110 (POP3)"
+Write-Host "  - WarFTP: port 21"
+Write-Host "  - Vulnserver: port 9999"
+Write-Host ""
+Write-Host "IMPORTANT: Only use this in an isolated lab environment!"
