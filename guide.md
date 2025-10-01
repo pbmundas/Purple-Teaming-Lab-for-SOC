@@ -3,101 +3,170 @@
 This guide explains how to set up, run, and use the purple teaming lab for SOC operations.
 
 ## Prerequisites
-- Windows host with Docker Desktop and WSL2 enabled.
-- 32GB RAM, 256GB SSD (allocate ~20GB RAM and ~100GB disk to Docker).
+- Windows host (I am using) with Virtualbox installed [https://download.virtualbox.org/virtualbox/7.2.2/VirtualBox-7.2.2-170484-Win.exe](Download).
+- 32 GB RAM, 256GB SSD (allocate ~16GB RAM (Min) and ~200GB for logs and installations).
 - Internet access for pulling Docker images.
-- Git installed for report management.
+- Windows 8.1 ISO for creating Victim machine (To perform platform dependednt attacks) [https://ia802307.us.archive.org/26/items/win-8.1-english_202107/Win8.1_English_x64.iso](Download).
+- Ubuntu ISO for creating Victim machine (To perform platform dependednt attacks) - [https://ubuntu.com/download/desktop/thank-you?version=24.04.3&architecture=amd64&lts=true](Download).
+- Wazuh pre-installed OVA - ([https://packages.wazuh.com/4.x/vm/wazuh-4.13.1.ova](Download))
 
-## Setup
-1. Clone the repository:
+I am running **Suricata** and **TheHive** in Docker containers alongside your **Wazuh OVA (Amazon Linux)** makes the lab cleaner, avoids dependency headaches, and keeps things modular.
+
+Here’s the full **step-by-step setup**:
+
+---
+
+# 1. VirtualBox Network Setup
+
+For **Wazuh + Suricata + TheHive VM**:
+
+* **Adapter 1**: **NAT** → for internet updates.
+* **Adapter 2**: **Internal Network (`socnet`)** → shared with Kali + Victim VMs.
+
+Enable **Promiscuous Mode = Allow All** on Adapter 2 for Wazuh VM (so Suricata sees all traffic).
+
+Do the same **Internal Network (`socnet`)** for Kali, Ubuntu victim, and Windows victim.
+
+Check Wazuh NICs:
+
+```bash
+ip addr
+```
+
+* `eth0` = NAT (internet)
+* `eth1` = Internal (lab traffic, sniff this with Suricata)
+
+---
+
+# 2. Install Docker on Wazuh VM
+
+```bash
+sudo yum install -y docker
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+(Optionally add your user to docker group: `sudo usermod -aG docker $USER`)
+
+---
+
+# 3. Run Suricata in Docker
+
+Create Suricata log dir on host:
+
+```bash
+sudo mkdir -p /var/log/suricata
+```
+
+Run Suricata container, binding to `eth1`:
+
+```bash
+sudo docker run -d --name suricata --net=host -v /var/log/suricata:/var/log/suricata jasonish/suricata:latest -i eth1
+```
+
+* `--net=host` → gives container full access to host NICs.
+* `-i eth1` → monitor lab network traffic.
+* Logs will appear in `/var/log/suricata/eve.json` on the host.
+
+---
+
+# 4. Integrate Suricata Logs with Wazuh
+
+Edit Wazuh config:
+
+```bash
+sudo nano /var/ossec/etc/ossec.conf
+```
+
+Add:
+
+```xml
+<localfile>
+  <log_format>json</log_format>
+  <location>/var/log/suricata/eve.json</location>
+</localfile>
+```
+
+Restart Wazuh:
+
+```bash
+sudo systemctl restart wazuh-manager
+```
+
+Now Suricata alerts will show up in the Wazuh dashboard 🎯.
+
+---
+
+# 5. Run TheHive in Docker
+
+TheHive depends on Cassandra + ElasticSearch, but the official Docker image bundles dependencies for simplicity.
+
+Run TheHive:
+
+```bash
+sudo docker run -d --name thehive \
+  -p 9000:9000 \
+  thehiveproject/thehive:latest
+```
+
+Access via browser:
+`http://<Wazuh-VM-IP>:9000`
+
+Default login:
+
+* **Username**: `admin@thehive.local`
+* **Password**: `secret`
+
+(Change immediately)
+
+---
+
+# 6. (Optional) Run Cortex (for enrichment)
+
+```bash
+sudo docker run -d --name cortex \
+  -p 9001:9001 \
+  thehiveproject/cortex:latest
+```
+
+Access via browser:
+`http://<Wazuh-VM-IP>:9001`
+
+---
+
+# 7. Validate the Pipeline
+
+1. From **Kali**, run a scan on Victim Ubuntu/Windows:
+
    ```bash
-   git clone <your-repo-url>
-   cd purple-team-lab
+   nmap -sS <victim-ip>
    ```
-2. Run the setup script to create configurations and pull images:
+2. Check Suricata log:
+
    ```bash
-   chmod +x scripts/setup.sh
-   ./scripts/setup.sh
+   tail -f /var/log/suricata/eve.json
    ```
 
-## Starting the Lab
-1. Launch all services:
-   ```bash
-   chmod +x scripts/start.sh
-   ./scripts/start.sh
-   ```
-2. Access services:
-   - **Kali Linux**: 
-     - SSH: `ssh root@localhost -p 2222` (password: root)
-     - VNC: Connect to `localhost:5901` (password: password)
-   - **Kibana**: http://localhost:5601
-   - **TheHive**: http://localhost:9000 (default credentials: admin/secret)
-   - **Wazuh Dashboard**: https://localhost (default credentials: admin/admin)
-   - **Caldera**: http://localhost:8888 (default credentials: admin/admin)
-   - **Vulnerable Targets**:
-     - Metasploitable2: http://localhost:8081, SMB (localhost:4451)
-     - DVWA: http://localhost:8082
-     - Windows XP: SMB (localhost:4452), RDP (localhost:3389)
-     - Vulnerable Web App: http://localhost:8083
+   You should see alerts.
+3. Check Wazuh dashboard → Suricata alerts ingested.
+4. (Optional) Forward incidents to **TheHive** via API or manual case creation.
 
-## Running Exploits
-1. Execute automated exploits:
-   ```bash
-   chmod +x scripts/exploit_vulnerabilities.sh
-   ./scripts/exploit_vulnerabilities.sh
-   ```
-2. Exploits include:
-   - **Metasploitable2**: UnrealIRCd backdoor (port 6667).
-   - **DVWA**: SQL Injection (manual verification at http://localhost:8082).
-   - **Windows XP**: MS08-067 NetAPI (SMB, port 445).
-   - **Vulnerable Web App**: Remote File Inclusion (port 80).
-   - **Atomic Red Team**: PowerShell command execution (T1059.001).
-   - **Caldera**: Basic adversary operation.
+---
 
-## Monitoring and Detection
-- **Suricata**: Logs network traffic to `/var/log/suricata/eve.json`, ingested by ELK.
-- **ELK Stack**: View Suricata logs and Wazuh alerts in Kibana (http://localhost:5601).
-- **Wazuh**: Monitors host activities and vulnerabilities in the dashboard (https://localhost).
-- **TheHive**: Manage incidents and correlate alerts (http://localhost:9000).
+# Final Setup Recap
 
-## Generating Reports
-1. Create a report summarizing activities:
-   ```bash
-   chmod +x scripts/generate_report.sh
-   ./scripts/generate_report.sh
-   ```
-2. Reports are stored in `reports/`:
-   - `activity_log.md`: Chronological log of activities.
-   - `findings/`: Exploit and Suricata logs.
-   - `screenshots/`: Add screenshots manually for visual evidence.
+* **VirtualBox**:
 
-## Stopping the Lab
-1. Stop and remove containers:
-   ```bash
-   chmod +x scripts/stop.sh
-   ./scripts/stop.sh
-   ```
+  * Wazuh VM with `eth0=NAT`, `eth1=socnet (promiscuous mode)`
+  * Kali + Victims on `socnet`
+* **Wazuh**: collects + displays Suricata logs.
+* **Suricata (Docker)**: IDS/IPS monitoring `eth1`, logs → `/var/log/suricata/eve.json`.
+* **TheHive (Docker)**: Case management on port `9000`.
+* **Cortex (Docker, optional)**: Analyzer integrations on port `9001`.
 
-## Troubleshooting
-- **Port Conflicts**: Ensure no other services use ports 2222, 5901, 5601, 9000, 443, 8888, 8081-8083, 4451-4452, 3389.
-- **Image Pull Errors**: Verify internet connectivity and Docker Hub access.
-- **Service Failures**: Check logs with `docker-compose logs <service>`.
+---
 
-## GitHub Integration
-1. Initialize a Git repository:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial purple teaming lab setup"
-   git remote add origin <your-repo-url>
-   git push -u origin main
-   ```
-2. Push reports after each exercise:
-   ```bash
-   git add reports/
-   git commit -m "Updated purple teaming reports"
-   git push
-   ```
+
 
 ## Security Notes
 - This lab contains intentionally vulnerable systems. Run it in an isolated environment.
