@@ -9,6 +9,7 @@ This guide explains how to set up, run, and use the purple teaming lab for SOC o
 - Windows 8.1 ISO for creating Victim machine (To perform platform dependednt attacks) [https://ia802307.us.archive.org/26/items/win-8.1-english_202107/Win8.1_English_x64.iso](Download).
 - Ubuntu ISO for creating Victim machine (To perform platform dependednt attacks) - [https://ubuntu.com/download/desktop/thank-you?version=24.04.3&architecture=amd64&lts=true](Download).
 - Wazuh pre-installed OVA - ([https://packages.wazuh.com/4.x/vm/wazuh-4.13.1.ova](Download))
+- Kali Linux is obviously to attack victim machines [https://cdimage.kali.org/kali-weekly/kali-linux-2025-W40-installer-amd64.iso](Download).
 
 I am running **Suricata** and **TheHive** in Docker containers alongside your **Wazuh OVA (Amazon Linux)** makes the lab cleaner, avoids dependency headaches, and keeps things modular.
 
@@ -155,7 +156,8 @@ Access via browser:
 
 ## 8. Create Victim Machines
  * Install agent from Wazuh Dashboard using "Add Agent".
- * execute 
+ * execute Windows/setup-vuln-lab.ps1 or Ubuntu/vulnerabilities.sh using administrator privileges based on your victim operating systems.
+
 
 ## Final Setup Recap
 
