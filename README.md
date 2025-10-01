@@ -156,7 +156,7 @@ Access via browser:
 
 ## 8. Create Victim Machines
  * Install agent from Wazuh Dashboard using "Add Agent".
- * execute Windows/setup-vuln-lab.ps1 or Ubuntu/vulnerabilities.sh using administrator privileges based on your victim operating systems.
+ * (To install vulnerable software/services) execute Windows/setup-vuln-lab.ps1 or Ubuntu/vulnerabilities.sh using administrator privileges based on your victim operating systems.
 
 
 ## Final Setup Recap
