@@ -1,3 +1,16 @@
+### install_vulnerable_windows.ps1
+PowerShell Script for Windows: Install Vulnerable Software for Purple Team Lab
+This script installs and configures vulnerable software on Windows (Server 2016+ or 10+). It includes:
+
+Active Directory Domain Services (AD DS) setup as a vulnerable domain.
+BadBlood (introduces thousands of vulnerable objects, users, groups, permissions; exploitable via Metasploit AD modules like auxiliary/gather/ldap_query or Kerberoasting exploits).
+DVWA via XAMPP (intentionally vulnerable web app, as above).
+Vulnerable IIS/FTP (old config, exploitable via Metasploit's IIS/FTP modules like exploit/windows/iis/iis_webdav_scstoragepathfromurl).
+
+Run as Administrator (e.g., powershell -ExecutionPolicy Bypass -File install_vulnerable_windows.ps1). Assumes a fresh install; test in a VM. Derived from tested GitHub and lab sources.
+
+
+### setup-vuln-lab.ps1
 Here’s a Windows equivalent setup to your Ubuntu vulnerabilities.sh lab — a curated list of vulnerable Windows applications and corresponding Metasploit modules, intended for lab use only (e.g., in VirtualBox or Hyper-V).
 
 Set-ExecutionPolicy Bypass -Scope Process -Force
