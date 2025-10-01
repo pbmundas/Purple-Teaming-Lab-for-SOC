@@ -11,7 +11,7 @@ This guide explains how to set up, run, and use the purple teaming lab for SOC o
 - Wazuh pre-installed OVA - ([https://packages.wazuh.com/4.x/vm/wazuh-4.13.1.ova](Download))
 - Kali Linux is obviously to attack victim machines ([https://cdimage.kali.org/kali-weekly/kali-linux-2025-W40-installer-amd64.iso](Download))
 
-I am running **Suricata** and **TheHive** in Docker containers alongside your **Wazuh OVA (Amazon Linux)** makes the lab cleaner, avoids dependency headaches, and keeps things modular.
+I am running **Suricata** in Docker containers alongside your **Wazuh OVA (Amazon Linux)** makes the lab cleaner, avoids dependency headaches, and keeps things modular.
 
 Here’s the full **step-by-step setup**:
 
@@ -19,7 +19,7 @@ Here’s the full **step-by-step setup**:
 
 ## 1. VirtualBox Network Setup
 
-For **Wazuh + Suricata + TheHive VM**:
+For **Wazuh + Suricata VM**:
 
 * **Adapter 1**: **NAT** → for internet updates.
 * **Adapter 2**: **Internal Network (`socnet`)** → shared with Kali + Victim VMs.
@@ -98,44 +98,8 @@ Now Suricata alerts will show up in the Wazuh dashboard 🎯.
 
 ---
 
-## 5. Run TheHive in Docker
 
-TheHive depends on Cassandra + ElasticSearch, but the official Docker image bundles dependencies for simplicity.
-
-Run TheHive:
-
-```bash
-sudo docker run -d --name thehive \
-  -p 9000:9000 \
-  thehiveproject/thehive:latest
-```
-
-Access via browser:
-`http://<Wazuh-VM-IP>:9000`
-
-Default login:
-
-* **Username**: `admin@thehive.local`
-* **Password**: `secret`
-
-(Change immediately)
-
----
-
-## 6. (Optional) Run Cortex (for enrichment)
-
-```bash
-sudo docker run -d --name cortex \
-  -p 9001:9001 \
-  thehiveproject/cortex:latest
-```
-
-Access via browser:
-`http://<Wazuh-VM-IP>:9001`
-
----
-
-## 7. Validate the Pipeline
+## 5. Validate the Pipeline
 
 1. From **Kali**, run a scan on Victim Ubuntu/Windows:
 
@@ -150,11 +114,10 @@ Access via browser:
 
    You should see alerts.
 3. Check Wazuh dashboard → Suricata alerts ingested.
-4. (Optional) Forward incidents to **TheHive** via API or manual case creation.
 
 ---
 
-## 8. Create Victim Machines
+## 6. Create Victim Machines
  * Install agent from Wazuh Dashboard using "Add Agent".
  * (To install vulnerable software/services) execute Windows/setup-vuln-lab.ps1 or Ubuntu/vulnerabilities.sh using administrator privileges based on your victim operating systems.
 
@@ -167,7 +130,6 @@ Access via browser:
   * Kali + Victims on `socnet`
 * **Wazuh**: collects + displays Suricata logs.
 * **Suricata (Docker)**: IDS/IPS monitoring `eth1`, logs → `/var/log/suricata/eve.json`.
-* **TheHive (Docker)**: Case management on port `9000`.
 * **Cortex (Docker, optional)**: Analyzer integrations on port `9001`.
 
 ---
