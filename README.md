@@ -130,7 +130,6 @@ Now Suricata alerts will show up in the Wazuh dashboard 🎯.
   * Kali + Victims on `socnet`
 * **Wazuh**: collects + displays Suricata logs.
 * **Suricata (Docker)**: IDS/IPS monitoring `eth1`, logs → `/var/log/suricata/eve.json`.
-* **Cortex (Docker, optional)**: Analyzer integrations on port `9001`.
 
 ---
 
