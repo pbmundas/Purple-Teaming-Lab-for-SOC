@@ -7,4 +7,5 @@ DDTRW-HNDHV-KP2J7-BJRGG-RRFX3
 GCRJD-8NW9H-F2CDX-CCM8D-9D6T9
 MNDGV-M6PKV-DV4DR-CYY8X-2YRXH
 
+https://archive.org/details/win-8.1-english-x-64-x-86
 https://softwarekeep.com/blogs/news/free-windows-8-and-8-1-product-keys-that-still-work-in-2021
